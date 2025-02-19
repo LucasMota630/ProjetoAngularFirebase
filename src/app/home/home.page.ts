@@ -12,6 +12,15 @@ import { Router } from '@angular/router';
 })
 export class HomePage {
 
-  constructor( ){ }
+  page: string = 'Página Inicial';
+  valor: number = 0;
 
+  increment(){
+    this.valor++;
+  }
+
+  
+  decrement(){
+    this.valor--;
+  }
 }
