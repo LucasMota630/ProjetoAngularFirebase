@@ -1,17 +1,148 @@
 <ion-content [fullscreen]="true">
     
-  <ion-row>
-    <ion-col size="12" size-lg="6">
-       <ion-item>
-          <ion-input label="Nome do Pokemon" placeholder="Nome do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.nome"></ion-input>
-       </ion-item>
-       <ion-item>
-        <ion-input label="Poder do Pokemon" placeholder="Poder do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.poder"></ion-input>
-     </ion-item>
-     <ion-item lines="none">
-        <ion-button (click)="enviar()" color="secondary" size="medium">Enviar</ion-button>
-     </ion-item>
-    </ion-col>
-  </ion-row>
+   <ion-row class="ion-justify-content-center">
+      <ion-col size="12" size-xl="6">
+
+         <!--Dados do Perfil-->
+         <ion-row>
+            <ion-col size="4">
+               <img src="https://ih1.redbubble.net/image.5521167104.3486/raf,360x360,075,t,fafafa:ca443f4786.jpg" style="width: 100%;">
+            </ion-col>
+            <ion-col size="8">
+               <ion-item lines="none">
+                  <ion-label>
+                     <h1>Lloyd Frontera</h1>
+                  </ion-label>
+               </ion-item>
+               <ion-item lines="none">
+                  <ion-label>
+                     <h4>Estelionatário</h4>
+                  </ion-label>
+               </ion-item>
+               <ion-item lines="none">
+                  <ion-label>
+                     <h4>@LloydFrontera</h4>
+                  </ion-label>
+               </ion-item>
+               <ion-item lines="none">
+                  <ion-label>
+                     <h4>Coreano</h4>
+                  </ion-label>
+               </ion-item>
+               <ion-item lines="none">
+                  <ion-label>
+                     <h4>Seul</h4>
+                  </ion-label>
+               </ion-item>
+               <ion-item lines="none">
+                  <ion-label>
+                     <h4>1992</h4>
+                  </ion-label>
+               </ion-item>
+            </ion-col>
+         </ion-row>
+         
+         <!--Título Biografia-->
+         <ion-row>
+            <ion-col size="12">
+               <ion-item lines="none">
+                  <ion-label>
+                     <h2>Biografia</h2>
+                  </ion-label>
+               </ion-item>
+            </ion-col>
+         </ion-row>
+         
+         <!--Descrição da Biografia-->
+         <ion-row>
+            <ion-col size="12">
+               <ion-item lines="none">
+                  <p>Lloyd Frontera is a leading construction engineer responsible for the development of the Frontera County.
+                     He is the eldest son of Arcos and Marbella Frontera, the older brother of Julian Frontera, and the main protagonist of The Greatest Estate Developer.
+
+                     His body is currently inhabited by Suho Kim. The original Lloyd Frontera was forcefully extracted from his original body, and after some wait time, was sent to wander around hell without a purpose.</p>
+               </ion-item>
+            </ion-col>
+         </ion-row>
+
+         <!--Divider-->
+         <ion-row>
+            <ion-col size="12" class="text-center">
+               <ion-item-divider></ion-item-divider>
+            </ion-col>
+         </ion-row>
+
+         <!--Estatísticas-->
+         <ion-row>
+            <ion-col size="4" class="text-center">
+               <ion-item line="none">
+                  <ion-label>
+                     <h2>45.6K</h2>
+                  </ion-label>
+               </ion-item>
+               <ion-item line="none">
+                  <ion-label>
+                     <h2>Curtidas</h2>
+                  </ion-label>
+               </ion-item>
+            </ion-col>
+            <ion-col size="4" class="text-center">
+               <ion-item line="none">
+                  <ion-label>
+                     <h2>45.6K</h2>
+                  </ion-label>
+               </ion-item>
+               <ion-item line="none">
+                  <ion-label>
+                     <h2>Seguindo</h2>
+                  </ion-label>
+               </ion-item>
+            </ion-col>
+            <ion-col size="4" class="text-center">
+               <ion-item line="none">
+                  <ion-label>
+                     <h2>45.6K</h2>
+                  </ion-label>
+               </ion-item>
+               <ion-item line="none">
+                  <ion-label>
+                     <h2>Amigos</h2>
+                  </ion-label>
+               </ion-item>
+            </ion-col>
+         </ion-row>
+
+         <!--Divider-->
+         <ion-row>
+            <ion-col size="12" class="text-center">
+               <ion-item-divider></ion-item-divider>
+            </ion-col>
+         </ion-row>
+
+         <!--Minhas Postagens-->
+         <ng-container *ngFor="let postagem of this.perfil.postagem">
+            <ion-row>
+               <ion-col size="4">
+                  <img src="{{postagem.foto}}">
+               </ion-col>
+               <ion-col size="8">
+                  <ion-item lines="none">
+                     <ion-label>
+                        <h2>{{postagem.nome}} - {{postagem.nome_usuario}}</h2>
+                     </ion-label>
+                  </ion-item>
+                  <ion-item lines="none">
+                     <p>{{postagem.texto}}</p>
+                  </ion-item>
+                  <ion-item lines="none">
+                     <p>{{postagem.data}}</p>
+                  </ion-item>
+               </ion-col>
+            </ion-row>
+         </ng-container>
+
+      </ion-col>
+   </ion-row>
+   
 
 </ion-content>
