@@ -1,17 +1,38 @@
+<ion-header>
+   <ion-toolbar>
+     <ion-title>Pagina de Login</ion-title>
+   </ion-toolbar>
+ </ion-header>
+
 <ion-content [fullscreen]="true">
+
+   <ion-card>
+		<ion-label>Faça o Login</ion-label>
+	</ion-card>
     
-  <ion-row>
-    <ion-col size="12" size-lg="6">
+  <ion-row class="ion-justify-content-center">
+    <ion-col size="10" size-lg="8">
        <ion-item>
-          <ion-input label="Nome do Pokemon" placeholder="Nome do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.nome"></ion-input>
+          <ion-input label="Digite seu E-mail" placeholder="Coloque o E-mail aqui" labelPlacement="floating"></ion-input>
        </ion-item>
        <ion-item>
-        <ion-input label="Poder do Pokemon" placeholder="Poder do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.poder"></ion-input>
+        <ion-input label="Digite sua senha" placeholder="Coloque a sua senha aqui" labelPlacement="floating"></ion-input>
      </ion-item>
      <ion-item lines="none">
-        <ion-button (click)="enviar()" color="secondary" size="medium">Enviar</ion-button>
+        <ion-button (click)="enviar()" color="primary" size="medium">Logar</ion-button>
      </ion-item>
+    </ion-col>
+    <ion-col size="2" size-lg="4">
+      <ion-item>
+      <img src="https://wallpapers.com/images/featured/fundo-roxo-e-preto-lv1jbd2edszka6d1.jpg">
+      </ion-item>
     </ion-col>
   </ion-row>
 
 </ion-content>
+
+<ion-footer>
+   <ion-toolbar>
+     <ion-title>@LucasMota</ion-title>
+   </ion-toolbar>
+ </ion-footer>

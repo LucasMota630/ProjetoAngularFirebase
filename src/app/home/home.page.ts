@@ -22,6 +22,6 @@ export class HomePage {
   ){ }
 
   enviar() {
-    this.crudService.insert(this.pokemon, 'pokemons');
+    alert('Logado com Sucesso');
   }
 }
