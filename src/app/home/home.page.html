@@ -1,17 +1,25 @@
 <ion-content [fullscreen]="true">
-    
-  <ion-row>
-    <ion-col size="12" size-lg="6">
-       <ion-item>
-          <ion-input label="Nome do Pokemon" placeholder="Nome do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.nome"></ion-input>
-       </ion-item>
-       <ion-item>
-        <ion-input label="Poder do Pokemon" placeholder="Poder do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.poder"></ion-input>
-     </ion-item>
-     <ion-item lines="none">
-        <ion-button (click)="enviar()" color="secondary" size="medium">Enviar</ion-button>
-     </ion-item>
-    </ion-col>
-  </ion-row>
 
+   <ion-row class="ion-justify-content-center">
+      <ion-col size="auto">
+         <h1>{{ this.data_selecionada }}</h1>
+         <ion-datetime (ionChange)="definirData($event)"></ion-datetime>
+      </ion-col>
+   </ion-row>
+
+   <!--calculando dias de vida-->
+   <ion-row class="ion-justify-content-center">
+      <ion-col size="auto">
+         <h1>Você viveu {{ this.dias_vividos }}</h1>
+      </ion-col>
+      <ion-col size="auto">
+         <h1>Selecione a data de nascimento</h1>
+         <ion-datetime (ionChange)="definirDataInicial($event)"></ion-datetime>
+      </ion-col>
+      <ion-col size="auto">
+         <h1>Selecione a data atual</h1>
+         <ion-datetime (ionChange)="definirDataAtual($event)"></ion-datetime>
+      </ion-col>
+   </ion-row>
+   
 </ion-content>
