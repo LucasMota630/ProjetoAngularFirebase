@@ -11,17 +11,26 @@ import { Router } from '@angular/router';
   styleUrls: ['home.page.scss'],
 })
 export class HomePage {
-
-  pokemon:any = {
-    nome: null,
-    poder: null
-  };
-
-  constructor(
-    public crudService: CrudService
-  ){ }
-
-  enviar() {
-    this.crudService.insert(this.pokemon, 'pokemons');
-  }
+  side_menu: any = [
+    {
+      icon: 'home-outline',
+      name: 'Página Inicial',
+      selected: true
+    },
+    {
+      icon: 'cube-outline',
+      name: 'Produtos',
+      selected: false
+    },
+    {
+      icon: 'people-outline',
+      name: 'Clientes',
+      selected: false
+    },
+    {
+      icon: 'call-outline',
+      name: 'Contato',
+      selected: false
+    },
+  ];
 }

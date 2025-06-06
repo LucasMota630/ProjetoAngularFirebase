@@ -1,0 +1,10 @@
+<div class="conteiner-fluid bg-light m-2">
+  <div class="row">
+    <div class="col-12" *ngFor="let item of this.side_menu">
+      <ion-item>
+        <ion-icon name="{{item.icon}}"></ion-icon>
+        <ion-label><p class="text-dark">{{item.name}}</p></ion-label>
+      </ion-item>
+    </div>
+  </div>
+</div>
