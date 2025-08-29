@@ -1,17 +1,25 @@
 <ion-content [fullscreen]="true">
     
-  <ion-row>
-    <ion-col size="12" size-lg="6">
-       <ion-item>
-          <ion-input label="Nome do Pokemon" placeholder="Nome do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.nome"></ion-input>
-       </ion-item>
-       <ion-item>
-        <ion-input label="Poder do Pokemon" placeholder="Poder do Pokemon" labelPlacement="floating" [(ngModel)]="this.pokemon.poder"></ion-input>
-     </ion-item>
-     <ion-item lines="none">
-        <ion-button (click)="enviar()" color="secondary" size="medium">Enviar</ion-button>
-     </ion-item>
-    </ion-col>
-  </ion-row>
+   <ion-row class="ion-justify-content-center">
+      <ion-col size="6">
+         <ion-item>
+            <ion-input type="text" label="Nome Completo" [(ngModel)]="this.usuario.name"></ion-input>
+         </ion-item>
+         <ion-item>
+            <ion-input type="text" label="E-mail" [(ngModel)]="this.usuario.email"></ion-input>
+         </ion-item>
+         <ion-item>
+            <ion-input type="text" label="Senha" [(ngModel)]="this.usuario.password"></ion-input>
+         </ion-item>
+         <ion-item>
+            <ion-input type="text" label="Confirmação de Senha" [(ngModel)]="this.usuario.password_confirmation"></ion-input>
+         </ion-item>
+         <ion-item>
+            <ion-button (click)="this.cadastrarUsuario()">Cadastrar-se</ion-button>
+         </ion-item>
+      </ion-col>
+   </ion-row>
+
+   {{ this.usuario.name }}
 
 </ion-content>

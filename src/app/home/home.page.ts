@@ -4,6 +4,7 @@ import { CrudService } from '../services/crud.service';
 import { Storage, getDownloadURL, ref, uploadBytesResumable } from '@angular/fire/storage';
 import { MessageService } from '../services/message.service';
 import { Router } from '@angular/router';
+import { ApiService } from '../shared/api.service';
 
 @Component({
   selector: 'app-home',
@@ -12,16 +13,21 @@ import { Router } from '@angular/router';
 })
 export class HomePage {
 
-  pokemon:any = {
-    nome: null,
-    poder: null
-  };
+  usuario: any = {
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+  }
 
   constructor(
-    public crudService: CrudService
+    public apiService:ApiService
   ){ }
 
-  enviar() {
-    this.crudService.insert(this.pokemon, 'pokemons');
+  cadastrarUsuario(){
+    this.apiService.post('usuario/registrar-se', this.usuario).subscribe(resp => {
+      console.log(resp);
+    })
   }
+
 }
