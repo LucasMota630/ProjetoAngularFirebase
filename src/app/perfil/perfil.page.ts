@@ -91,7 +91,7 @@ uploadFoto() {
   }
 
   const formData = new FormData();
-  formData.append('picture', this.arquivoFoto);
+  formData.append('foto', this.arquivoFoto);
 
   this.apiService.post('usuario/foto-upload', formData).subscribe({
     next: (resp: any) => {
