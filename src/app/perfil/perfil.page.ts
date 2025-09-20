@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../shared/api.service';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular'; // Adicione esta importação
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-perfil',
@@ -22,10 +22,12 @@ export class PerfilPage implements OnInit {
     private apiService: ApiService,
     private storage: Storage,
     private router: Router,
-    private alertController: AlertController // Adicione esta injeção
-  ) { }
+    private alertController: AlertController
+  ) {}
 
   async ngOnInit() {
+    // Inicializa o Storage
+    await this.storage.create();
     await this.carregarUsuario();
   }
 
@@ -49,94 +51,87 @@ export class PerfilPage implements OnInit {
         }
       });
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro inesperado:', error);
       this.carregando = false;
       this.mostrarErro('Erro inesperado');
     }
   }
 
-
-
-  
   onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (file) {
-      // Verificar se é uma imagem
-      if (!file.type.startsWith('image/')) {
-        this.mostrarErro('Por favor, selecione apenas imagens');
-        return;
-      }
+    if (!file) return;
 
-      // Verificar tamanho do arquivo (ex: máximo 5MB)
-      if (file.size > 10 * 1024 * 1024) {
-        this.mostrarErro('A imagem deve ter no máximo 5MB');
-        return;
-      }
-
-      this.arquivoFoto = file;
-      
-      // Criar preview
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.previewFoto = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    if (!file.type.startsWith('image/')) {
+      this.mostrarErro('Por favor, selecione apenas imagens');
+      return;
     }
-  }
-  
-uploadFoto() {
-  if (!this.arquivoFoto) {
-    this.mostrarErro('Nenhuma imagem selecionada para upload.');
-    return;
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB
+      this.mostrarErro('A imagem deve ter no máximo 10MB');
+      return;
+    }
+
+    this.arquivoFoto = file;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => this.previewFoto = e.target.result;
+    reader.readAsDataURL(file);
   }
 
-  const formData = new FormData();
-  formData.append('picture', this.arquivoFoto);
-
-  this.apiService.post('usuario/foto-upload', formData).subscribe({
-    next: (resp: any) => {
-      console.log('Foto atualizada!', resp);
-
-      const baseUrl = 'http://localhost:8000/'; // ✅ SUBSTITUA pela URL real da sua API
-
-      this.usuario.picture = resp.picture_url.startsWith('http')
-        ? resp.picture_url
-        : baseUrl + resp.picture_url.replace(/^\/+/, ''); // Remove barras duplicadas
-
-      this.arquivoFoto = null;
-      this.previewFoto = null;
-
-      this.mostrarSucesso('Foto atualizada com sucesso!');
-    },
-    error: (err) => {
-      console.error('Erro detalhado:', err);
-      this.mostrarErro('Erro ao atualizar foto');
+  uploadFoto() {
+    if (!this.arquivoFoto) {
+      this.mostrarErro('Nenhuma imagem selecionada para upload.');
+      return;
     }
-  });
-}
 
+    const formData = new FormData();
+    formData.append('foto', this.arquivoFoto); // ⚡ Nome do campo igual ao esperado pelo Laravel
+
+    this.apiService.post('usuario/foto-upload', formData).subscribe({
+      next: (resp: any) => {
+        console.log('Foto atualizada!', resp);
+
+        const baseUrl = 'http://localhost:8000/';
+
+        this.usuario.picture = resp.picture_url.startsWith('http')
+          ? resp.picture_url
+          : baseUrl + resp.picture_url.replace(/^\/+/, '');
+
+        this.arquivoFoto = null;
+        this.previewFoto = null;
+
+        this.mostrarSucesso('Foto atualizada com sucesso!');
+      },
+      error: (err) => {
+        console.error('Erro detalhado:', err);
+        if (err.status === 422) {
+          this.mostrarErro('Formato ou tamanho da imagem inválido.');
+        } else if (err.status === 404 && err.error?.erro) {
+          this.mostrarErro(err.error.erro);
+        } else {
+          this.mostrarErro('Erro ao atualizar foto.');
+        }
+      }
+    });
+  }
 
   toggleEdicao() {
     this.editando = !this.editando;
   }
 
   salvarPerfil() {
-    // Validação básica
     if (!this.usuario.name || !this.usuario.email) {
       this.mostrarErro('Nome e e-mail são obrigatórios');
       return;
     }
 
     this.apiService.post('usuario/editar', this.usuario).subscribe({
-      next: (resp) => {
-        console.log('Perfil atualizado!', resp);
+      next: () => {
         this.editando = false;
         this.mostrarSucesso('Perfil atualizado com sucesso!');
       },
       error: (err) => {
         console.error('Erro ao salvar', err);
-        
-        // Tratamento específico para erro de e-mail duplicado
         if (err.status === 422 && err.error?.errors?.email) {
           this.mostrarErro('Este e-mail já está em uso por outro usuário');
         } else {
@@ -151,19 +146,10 @@ uploadFoto() {
       header: 'Sair',
       message: 'Deseja realmente sair?',
       buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Sair',
-          handler: () => {
-            this.realizarLogout();
-          }
-        }
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Sair', handler: () => this.realizarLogout() }
       ]
     });
-    
     await alert.present();
   }
 
@@ -176,7 +162,6 @@ uploadFoto() {
       },
       error: (err) => {
         console.error('Erro no logout', err);
-        // Mesmo com erro, limpa o storage local
         this.storage.remove('auth_token');
         this.storage.remove('user_data');
         this.router.navigate(['/home']);
