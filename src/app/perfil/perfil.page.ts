@@ -16,7 +16,7 @@ export class PerfilPage implements OnInit {
   editando: boolean = false;
   arquivoFoto: File | null = null;
   previewFoto: string | null = null;
-  timestamp: number = new Date().getTime();
+  erro: string = '';
 
   constructor(
     private apiService: ApiService,
@@ -26,53 +26,178 @@ export class PerfilPage implements OnInit {
   ) {}
 
   async ngOnInit() {
-    // Inicializa o Storage
-    await this.storage.create();
     await this.carregarUsuario();
   }
 
   async carregarUsuario() {
     try {
+      this.carregando = true;
+      this.erro = '';
+      console.log('🔍 Iniciando carregamento do usuário...');
+      
+      // Verifica token
       const token = await this.storage.get('auth_token');
+      console.log('🔐 Token no storage:', token ? 'Presente' : 'Ausente');
+      
       if (!token) {
-        this.router.navigate(['/home']);
+        this.erro = 'Token não encontrado. Faça login novamente.';
+        this.router.navigate(['/login']);
         return;
       }
 
+      // Tenta carregar dados do storage como fallback
+      const userData = await this.storage.get('user_data');
+      if (userData) {
+        console.log('📂 Dados do usuário no storage:', userData);
+        this.usuario = userData;
+      }
+
+      // Faz requisição para a API
       this.apiService.get('usuario/perfil').subscribe({
-        next: (resp) => {
-          this.usuario = resp;
+        next: (resp: any) => {
+          console.log('📦 Resposta da API:', resp);
+          
+          if (resp && typeof resp === 'object' && Object.keys(resp).length > 0) {
+            console.log('✅ API retornou dados válidos');
+            this.processarDadosAPI(resp);
+          } else {
+            console.warn('⚠️ API retornou objeto vazio ou sem dados');
+            this.erro = 'API retornou dados vazios. ';
+            
+            if (this.usuario) {
+              this.erro += 'Usando dados salvos localmente.';
+              console.log('🔄 Usando dados do storage');
+            } else {
+              this.erro += 'Nenhum dado local encontrado.';
+              this.usuario = this.criarUsuarioPadrao();
+            }
+          }
+          
           this.carregando = false;
         },
         error: (err) => {
-          console.error('Erro ao carregar perfil', err);
+          console.error('💥 Erro na requisição:', err);
           this.carregando = false;
-          this.mostrarErro('Erro ao carregar perfil');
+          
+          if (err.status === 401) {
+            this.erro = 'Sessão expirada. Faça login novamente.';
+            this.router.navigate(['/login']);
+          } else if (err.status === 404) {
+            this.erro = 'Endpoint não encontrado. Verifique a URL da API.';
+          } else {
+            this.erro = `Erro ${err.status}: ${err.error?.message || err.message}`;
+          }
+          
+          // Se tem dados locais, usa eles mesmo com erro
+          if (this.usuario) {
+            this.erro += ' (Usando dados locais)';
+          }
         }
       });
     } catch (error) {
-      console.error('Erro inesperado:', error);
+      console.error('💥 Erro inesperado:', error);
       this.carregando = false;
-      this.mostrarErro('Erro inesperado');
+      this.erro = 'Erro interno ao carregar perfil';
     }
   }
 
+  private processarDadosAPI(dados: any) {
+    // Tenta extrair dados do usuário de várias estruturas possíveis
+    let dadosUsuario = null;
+
+    // Possíveis caminhos
+    const caminhos = ['data', 'usuario', 'user', 'perfil', 'profile', 'cliente'];
+    
+    for (const caminho of caminhos) {
+      if (dados[caminho]) {
+        dadosUsuario = dados[caminho];
+        console.log(`🎯 Dados encontrados em: ${caminho}`, dadosUsuario);
+        break;
+      }
+    }
+
+    // Se não encontrou em caminhos específicos, usa o objeto raiz
+    if (!dadosUsuario && (dados.name || dados.email)) {
+      dadosUsuario = dados;
+    }
+
+    if (dadosUsuario) {
+      this.usuario = {
+        name: dadosUsuario.name || dadosUsuario.nome || '',
+        email: dadosUsuario.email || '',
+        status: dadosUsuario.status || 'Ativo',
+        picture: dadosUsuario.picture || dadosUsuario.foto || null,
+        id: dadosUsuario.id || null
+      };
+      
+      // Salva no storage para uso futuro
+      this.storage.set('user_data', this.usuario);
+    } else {
+      this.erro = 'Não foi possível extrair dados do usuário da resposta da API.';
+      this.usuario = this.criarUsuarioPadrao();
+    }
+  }
+
+  private criarUsuarioPadrao() {
+    return {
+      name: 'Usuário',
+      email: 'usuario@exemplo.com',
+      status: 'Ativo',
+      picture: null,
+      id: null
+    };
+  }
+
+  // Testa diferentes endpoints
+  testarEndpoints() {
+    console.log('🔧 Testando endpoints...');
+    
+    const endpoints = [
+      'usuario/perfil',
+      'user/profile',
+      'auth/user',
+      'api/user',
+      'perfil',
+      'profile'
+    ];
+
+    endpoints.forEach(endpoint => {
+      this.apiService.get(endpoint).subscribe({
+        next: (resp) => {
+          console.log(`✅ ${endpoint}:`, resp);
+        },
+        error: (err) => {
+          console.log(`❌ ${endpoint}:`, err.status);
+        }
+      });
+    });
+  }
+
+  // Verifica se a API está respondendo
+  testarConexaoAPI() {
+    console.log('🌐 Testando conexão com API...');
+    
+    this.apiService.get('').subscribe({
+      next: (resp) => {
+        console.log('✅ API respondendo:', resp);
+      },
+      error: (err) => {
+        console.log('❌ Erro na API:', err);
+      }
+    });
+  }
+
+  // Resto dos métodos...
   onFileSelected(event: any) {
     const file = event.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      this.mostrarErro('Por favor, selecione apenas imagens');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB
-      this.mostrarErro('A imagem deve ter no máximo 10MB');
+      this.mostrarErro('Selecione uma imagem válida');
       return;
     }
 
     this.arquivoFoto = file;
-
     const reader = new FileReader();
     reader.onload = (e: any) => this.previewFoto = e.target.result;
     reader.readAsDataURL(file);
@@ -80,37 +205,26 @@ export class PerfilPage implements OnInit {
 
   uploadFoto() {
     if (!this.arquivoFoto) {
-      this.mostrarErro('Nenhuma imagem selecionada para upload.');
+      this.mostrarErro('Selecione uma imagem primeiro');
       return;
     }
 
     const formData = new FormData();
-    formData.append('foto', this.arquivoFoto); // ⚡ Nome do campo igual ao esperado pelo Laravel
+    formData.append('foto', this.arquivoFoto);
 
     this.apiService.post('usuario/foto-upload', formData).subscribe({
       next: (resp: any) => {
-        console.log('Foto atualizada!', resp);
-
-        const baseUrl = 'http://localhost:8000/';
-
-        this.usuario.picture = resp.picture_url.startsWith('http')
-          ? resp.picture_url
-          : baseUrl + resp.picture_url.replace(/^\/+/, '');
-
+        console.log('✅ Upload realizado:', resp);
+        if (resp.picture_url || resp.foto || resp.url) {
+          this.usuario.picture = resp.picture_url || resp.foto || resp.url;
+        }
         this.arquivoFoto = null;
         this.previewFoto = null;
-
-        this.mostrarSucesso('Foto atualizada com sucesso!');
+        this.mostrarSucesso('Foto atualizada!');
       },
       error: (err) => {
-        console.error('Erro detalhado:', err);
-        if (err.status === 422) {
-          this.mostrarErro('Formato ou tamanho da imagem inválido.');
-        } else if (err.status === 404 && err.error?.erro) {
-          this.mostrarErro(err.error.erro);
-        } else {
-          this.mostrarErro('Erro ao atualizar foto.');
-        }
+        console.error('❌ Erro no upload:', err);
+        this.mostrarErro('Erro ao atualizar foto');
       }
     });
   }
@@ -120,23 +234,21 @@ export class PerfilPage implements OnInit {
   }
 
   salvarPerfil() {
-    if (!this.usuario.name || !this.usuario.email) {
-      this.mostrarErro('Nome e e-mail são obrigatórios');
+    if (!this.usuario?.name?.trim()) {
+      this.mostrarErro('Nome é obrigatório');
       return;
     }
 
     this.apiService.post('usuario/editar', this.usuario).subscribe({
       next: () => {
         this.editando = false;
-        this.mostrarSucesso('Perfil atualizado com sucesso!');
+        this.mostrarSucesso('Perfil atualizado!');
+        // Atualiza dados locais
+        this.storage.set('user_data', this.usuario);
       },
       error: (err) => {
-        console.error('Erro ao salvar', err);
-        if (err.status === 422 && err.error?.errors?.email) {
-          this.mostrarErro('Este e-mail já está em uso por outro usuário');
-        } else {
-          this.mostrarErro('Erro ao salvar perfil');
-        }
+        console.error('Erro ao salvar:', err);
+        this.mostrarErro('Erro ao salvar perfil');
       }
     });
   }
@@ -147,26 +259,17 @@ export class PerfilPage implements OnInit {
       message: 'Deseja realmente sair?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { text: 'Sair', handler: () => this.realizarLogout() }
+        { 
+          text: 'Sair', 
+          handler: () => {
+            this.storage.remove('auth_token');
+            this.storage.remove('user_data');
+            this.router.navigate(['/login']);
+          }
+        }
       ]
     });
     await alert.present();
-  }
-
-  private realizarLogout() {
-    this.apiService.post('usuario/logout', {}).subscribe({
-      next: async () => {
-        await this.storage.remove('auth_token');
-        await this.storage.remove('user_data');
-        this.router.navigate(['/home']);
-      },
-      error: (err) => {
-        console.error('Erro no logout', err);
-        this.storage.remove('auth_token');
-        this.storage.remove('user_data');
-        this.router.navigate(['/home']);
-      }
-    });
   }
 
   private async mostrarErro(mensagem: string) {

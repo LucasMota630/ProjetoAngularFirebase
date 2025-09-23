@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../shared/api.service';
 import { Storage } from '@ionic/storage-angular';
@@ -9,7 +9,7 @@ import { AlertController } from '@ionic/angular';
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
   email: string = '';
   senha: string = '';
   carregando: boolean = false;
@@ -20,6 +20,11 @@ export class LoginPage {
     private storage: Storage,
     private alertCtrl: AlertController
   ) {}
+
+  async ngOnInit() {
+    // Inicializa o Storage antes de qualquer get/set
+    await this.storage.create();
+  }
 
   async login() {
     if (!this.email || !this.senha) {
@@ -34,8 +39,10 @@ export class LoginPage {
       password: this.senha,
     }).subscribe({
       next: async (resp) => {
+        // Agora o Storage já está inicializado
         await this.storage.set('auth_token', resp.token);
         await this.storage.set('user_data', resp.user);
+
         this.carregando = false;
         this.router.navigate(['/perfil']);
       },

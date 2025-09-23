@@ -1,7 +1,11 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>Meu Perfil</ion-title>
+    <ion-title>Perfil do Usuário</ion-title>
     <ion-buttons slot="end">
+      <ion-button (click)="testarEndpoints()" color="medium" fill="outline">
+        <ion-icon name="wifi-outline" slot="start"></ion-icon>
+        Testar Endpoints
+      </ion-button>
       <ion-button (click)="logout()">
         <ion-icon name="log-out-outline"></ion-icon>
       </ion-button>
@@ -10,55 +14,110 @@
 </ion-header>
 
 <ion-content>
-  <div class="ion-padding" *ngIf="carregando">
-    <ion-spinner></ion-spinner>
+  <!-- Loading -->
+  <div class="ion-padding ion-text-center" *ngIf="carregando">
+    <ion-spinner name="crescent"></ion-spinner>
     <p>Carregando perfil...</p>
   </div>
 
-  <div class="ion-padding" *ngIf="!carregando && usuario">
-    <!-- Foto de Perfil -->
-    <div class="foto-container">
-      <img [src]="previewFoto || usuario?.picture" class="foto-perfil" alt="Foto de perfil">
-      
-      <input type="file" #fileInput hidden accept="image/*" (change)="onFileSelected($event)">
-      <ion-button fill="clear" (click)="fileInput.click()">
-        <ion-icon name="camera-outline"></ion-icon>
-        Alterar Foto
-      </ion-button>
+  <!-- Erro -->
+  <div class="ion-padding" *ngIf="erro">
+    <ion-card color="warning">
+      <ion-card-header>
+        <ion-card-title>⚠️ Atenção</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>{{erro}}</p>
+        <ion-button (click)="carregarUsuario()" fill="outline">
+          <ion-icon name="refresh" slot="start"></ion-icon>
+          Tentar Novamente
+        </ion-button>
+        <ion-button (click)="testarConexaoAPI()" fill="outline" color="medium">
+          <ion-icon name="wifi" slot="start"></ion-icon>
+          Testar API
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
 
-      <ion-button *ngIf="arquivoFoto" (click)="uploadFoto()" fill="solid">
-        Enviar Foto
-      </ion-button>
+  <!-- Conteúdo Principal -->
+  <div class="ion-padding" *ngIf="!carregando && usuario">
+    
+    <!-- Aviso se usando dados locais -->
+    <ion-card color="light" *ngIf="erro && erro.includes('locais')">
+      <ion-card-content>
+        <ion-text color="warning">
+          <p>⚠️ Usando dados salvos localmente</p>
+        </ion-text>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Foto -->
+    <div class="ion-text-center ion-margin-vertical">
+      <ion-avatar style="width: 120px; height: 120px; margin: 0 auto 20px;">
+        <img 
+          [src]="previewFoto || usuario.picture" 
+          *ngIf="previewFoto || usuario.picture"
+          alt="Foto de perfil"
+          style="width: 100%; height: 100%; object-fit: cover;"
+        />
+        <div *ngIf="!previewFoto && !usuario.picture" style="width: 100%; height: 100%; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <ion-icon name="person" style="font-size: 60px; color: #ccc;"></ion-icon>
+        </div>
+      </ion-avatar>
+      
+      <div>
+        <input type="file" #fileInput hidden accept="image/*" (change)="onFileSelected($event)">
+        <ion-button fill="clear" size="small" (click)="fileInput.click()">
+          <ion-icon name="camera" slot="start"></ion-icon>
+          Alterar Foto
+        </ion-button>
+        
+        <ion-button *ngIf="arquivoFoto" size="small" (click)="uploadFoto()" color="success">
+          <ion-icon name="cloud-upload" slot="start"></ion-icon>
+          Enviar Foto
+        </ion-button>
+      </div>
     </div>
 
-    <!-- Dados do Usuário -->
+    <!-- Formulário -->
     <ion-list>
       <ion-item>
         <ion-label position="stacked">Nome</ion-label>
-        <ion-input [readonly]="!editando" [(ngModel)]="usuario.name"></ion-input>
+        <ion-input 
+          [(ngModel)]="usuario.name"
+          [readonly]="!editando"
+          placeholder="Seu nome"
+        ></ion-input>
       </ion-item>
 
       <ion-item>
         <ion-label position="stacked">Email</ion-label>
-        <ion-input [readonly]="!editando" [(ngModel)]="usuario.email" type="email"></ion-input>
+        <ion-input 
+          type="email"
+          [(ngModel)]="usuario.email"
+          [readonly]="!editando"
+          placeholder="seu@email.com"
+        ></ion-input>
       </ion-item>
 
       <ion-item>
         <ion-label position="stacked">Status</ion-label>
-        <ion-input [readonly]="true" [value]="usuario.status"></ion-input>
+        <ion-input 
+          [value]="usuario.status"
+          readonly
+        ></ion-input>
       </ion-item>
     </ion-list>
 
-    <!-- Botões de Ação -->
+    <!-- Botões -->
     <div class="ion-margin-top">
-      <ion-button *ngIf="!editando" (click)="toggleEdicao()" expand="block">
-        <ion-icon name="create-outline"></ion-icon>
+      <ion-button *ngIf="!editando" (click)="toggleEdicao()" expand="block" color="primary">
         Editar Perfil
       </ion-button>
 
       <ion-button *ngIf="editando" (click)="salvarPerfil()" expand="block" color="success">
-        <ion-icon name="save-outline"></ion-icon>
-        Salvar Alterações
+        Salvar
       </ion-button>
 
       <ion-button *ngIf="editando" (click)="toggleEdicao()" expand="block" color="medium" fill="outline">
