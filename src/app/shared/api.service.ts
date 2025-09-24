@@ -53,7 +53,4 @@ export class ApiService {
       })
     );
   }
-
-  
-  // Adicione outros métodos (put, delete, etc) se necessário
 }

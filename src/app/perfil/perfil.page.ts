@@ -3,6 +3,7 @@ import { ApiService } from '../shared/api.service';
 import { Storage } from '@ionic/storage-angular';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
+import { PostagemService } from '../services/postagem.service';
 
 @Component({
   selector: 'app-perfil',
@@ -10,7 +11,6 @@ import { AlertController } from '@ionic/angular';
   styleUrls: ['./perfil.page.scss'],
 })
 export class PerfilPage implements OnInit {
-
   usuario: any = null;
   carregando: boolean = true;
   editando: boolean = false;
@@ -18,11 +18,16 @@ export class PerfilPage implements OnInit {
   previewFoto: string | null = null;
   erro: string = '';
 
+  postagens: any[] = [];
+  novaPostagem = { titulo: '', conteudo: '' };
+  carregandoPostagens: boolean = false;
+
   constructor(
     private apiService: ApiService,
     private storage: Storage,
     private router: Router,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private postagemService: PostagemService
   ) {}
 
   async ngOnInit() {
@@ -33,90 +38,61 @@ export class PerfilPage implements OnInit {
     try {
       this.carregando = true;
       this.erro = '';
-      console.log('🔍 Iniciando carregamento do usuário...');
-      
-      // Verifica token
+
       const token = await this.storage.get('auth_token');
-      console.log('🔐 Token no storage:', token ? 'Presente' : 'Ausente');
-      
       if (!token) {
         this.erro = 'Token não encontrado. Faça login novamente.';
         this.router.navigate(['/login']);
         return;
       }
 
-      // Tenta carregar dados do storage como fallback
       const userData = await this.storage.get('user_data');
-      if (userData) {
-        console.log('📂 Dados do usuário no storage:', userData);
-        this.usuario = userData;
-      }
+      if (userData) this.usuario = userData;
 
-      // Faz requisição para a API
       this.apiService.get('usuario/perfil').subscribe({
         next: (resp: any) => {
-          console.log('📦 Resposta da API:', resp);
-          
           if (resp && typeof resp === 'object' && Object.keys(resp).length > 0) {
-            console.log('✅ API retornou dados válidos');
             this.processarDadosAPI(resp);
           } else {
-            console.warn('⚠️ API retornou objeto vazio ou sem dados');
             this.erro = 'API retornou dados vazios. ';
-            
             if (this.usuario) {
               this.erro += 'Usando dados salvos localmente.';
-              console.log('🔄 Usando dados do storage');
             } else {
               this.erro += 'Nenhum dado local encontrado.';
               this.usuario = this.criarUsuarioPadrao();
             }
           }
-          
           this.carregando = false;
+          if (this.usuario?.id) this.carregarPostagens();
         },
         error: (err) => {
-          console.error('💥 Erro na requisição:', err);
           this.carregando = false;
-          
-          if (err.status === 401) {
-            this.erro = 'Sessão expirada. Faça login novamente.';
-            this.router.navigate(['/login']);
-          } else if (err.status === 404) {
-            this.erro = 'Endpoint não encontrado. Verifique a URL da API.';
-          } else {
-            this.erro = `Erro ${err.status}: ${err.error?.message || err.message}`;
-          }
-          
-          // Se tem dados locais, usa eles mesmo com erro
+          this.erro = `Erro ao conectar com a API: ${err.status}. `;
           if (this.usuario) {
-            this.erro += ' (Usando dados locais)';
+            this.erro += 'Usando dados locais.';
+          } else {
+            this.erro += 'Nenhum dado local encontrado.';
+            this.usuario = this.criarUsuarioPadrao();
           }
+          this.carregarPostagens();
         }
       });
     } catch (error) {
-      console.error('💥 Erro inesperado:', error);
       this.carregando = false;
       this.erro = 'Erro interno ao carregar perfil';
+      this.carregarPostagens();
     }
   }
 
   private processarDadosAPI(dados: any) {
-    // Tenta extrair dados do usuário de várias estruturas possíveis
     let dadosUsuario = null;
-
-    // Possíveis caminhos
     const caminhos = ['data', 'usuario', 'user', 'perfil', 'profile', 'cliente'];
-    
     for (const caminho of caminhos) {
       if (dados[caminho]) {
         dadosUsuario = dados[caminho];
-        console.log(`🎯 Dados encontrados em: ${caminho}`, dadosUsuario);
         break;
       }
     }
-
-    // Se não encontrou em caminhos específicos, usa o objeto raiz
     if (!dadosUsuario && (dados.name || dados.email)) {
       dadosUsuario = dados;
     }
@@ -129,8 +105,6 @@ export class PerfilPage implements OnInit {
         picture: dadosUsuario.picture || dadosUsuario.foto || null,
         id: dadosUsuario.id || null
       };
-      
-      // Salva no storage para uso futuro
       this.storage.set('user_data', this.usuario);
     } else {
       this.erro = 'Não foi possível extrair dados do usuário da resposta da API.';
@@ -144,59 +118,16 @@ export class PerfilPage implements OnInit {
       email: 'usuario@exemplo.com',
       status: 'Ativo',
       picture: null,
-      id: null
+      id: Date.now() // ID temporário
     };
   }
 
-  // Testa diferentes endpoints
-  testarEndpoints() {
-    console.log('🔧 Testando endpoints...');
-    
-    const endpoints = [
-      'usuario/perfil',
-      'user/profile',
-      'auth/user',
-      'api/user',
-      'perfil',
-      'profile'
-    ];
-
-    endpoints.forEach(endpoint => {
-      this.apiService.get(endpoint).subscribe({
-        next: (resp) => {
-          console.log(`✅ ${endpoint}:`, resp);
-        },
-        error: (err) => {
-          console.log(`❌ ${endpoint}:`, err.status);
-        }
-      });
-    });
-  }
-
-  // Verifica se a API está respondendo
-  testarConexaoAPI() {
-    console.log('🌐 Testando conexão com API...');
-    
-    this.apiService.get('').subscribe({
-      next: (resp) => {
-        console.log('✅ API respondendo:', resp);
-      },
-      error: (err) => {
-        console.log('❌ Erro na API:', err);
-      }
-    });
-  }
-
-  // Resto dos métodos...
   onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
+    if (!file || !file.type.startsWith('image/')) {
       this.mostrarErro('Selecione uma imagem válida');
       return;
     }
-
     this.arquivoFoto = file;
     const reader = new FileReader();
     reader.onload = (e: any) => this.previewFoto = e.target.result;
@@ -208,24 +139,17 @@ export class PerfilPage implements OnInit {
       this.mostrarErro('Selecione uma imagem primeiro');
       return;
     }
-
     const formData = new FormData();
     formData.append('foto', this.arquivoFoto);
 
     this.apiService.post('usuario/foto-upload', formData).subscribe({
       next: (resp: any) => {
-        console.log('✅ Upload realizado:', resp);
-        if (resp.picture_url || resp.foto || resp.url) {
-          this.usuario.picture = resp.picture_url || resp.foto || resp.url;
-        }
+        this.usuario.picture = resp.picture_url || resp.foto || resp.url;
         this.arquivoFoto = null;
         this.previewFoto = null;
         this.mostrarSucesso('Foto atualizada!');
       },
-      error: (err) => {
-        console.error('❌ Erro no upload:', err);
-        this.mostrarErro('Erro ao atualizar foto');
-      }
+      error: () => this.mostrarErro('Erro ao atualizar foto')
     });
   }
 
@@ -238,18 +162,13 @@ export class PerfilPage implements OnInit {
       this.mostrarErro('Nome é obrigatório');
       return;
     }
-
     this.apiService.post('usuario/editar', this.usuario).subscribe({
       next: () => {
         this.editando = false;
         this.mostrarSucesso('Perfil atualizado!');
-        // Atualiza dados locais
         this.storage.set('user_data', this.usuario);
       },
-      error: (err) => {
-        console.error('Erro ao salvar:', err);
-        this.mostrarErro('Erro ao salvar perfil');
-      }
+      error: () => this.mostrarErro('Erro ao salvar perfil')
     });
   }
 
@@ -259,8 +178,8 @@ export class PerfilPage implements OnInit {
       message: 'Deseja realmente sair?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        { 
-          text: 'Sair', 
+        {
+          text: 'Sair',
           handler: () => {
             this.storage.remove('auth_token');
             this.storage.remove('user_data');
@@ -288,5 +207,76 @@ export class PerfilPage implements OnInit {
       buttons: ['OK']
     });
     await alert.present();
+  }
+
+  carregarPostagens() {
+    if (!this.usuario?.id) {
+      console.warn('ID do usuário não disponível para carregar postagens');
+      return;
+    }
+
+    this.carregandoPostagens = true;
+    
+    this.postagemService.listarPostagens(this.usuario.id).subscribe({
+      next: (dados) => {
+        this.postagens = dados || [];
+        this.carregandoPostagens = false;
+      },
+      error: (err) => {
+        console.error('Erro ao carregar postagens:', err);
+        this.carregandoPostagens = false;
+        this.postagens = [];
+      }
+    });
+  }
+
+  adicionarPostagem() {
+    if (!this.novaPostagem.titulo.trim() || !this.novaPostagem.conteudo.trim()) {
+      this.mostrarErro('Título e conteúdo são obrigatórios');
+      return;
+    }
+
+    if (!this.usuario?.id) {
+      this.mostrarErro('Usuário não identificado');
+      return;
+    }
+
+    const postagem = {
+      ...this.novaPostagem,
+      usuarioId: this.usuario.id,
+      usuarioNome: this.usuario.name,
+      data: new Date().toISOString()
+    };
+
+    this.postagemService.criarPostagem(postagem).subscribe({
+      next: (nova) => {
+        this.postagens.unshift(nova);
+        this.novaPostagem = { titulo: '', conteudo: '' };
+        this.mostrarSucesso('Postagem criada com sucesso!');
+      },
+      error: (err) => {
+        console.error('Erro ao criar postagem:', err);
+        this.mostrarErro('Erro ao criar postagem. Verifique sua conexão.');
+      }
+    });
+  }
+
+  async testarConexaoAPI() {
+    const alert = await this.alertController.create({
+      header: 'Teste de Conexão',
+      message: 'Testando conexão com a API...',
+      buttons: ['OK']
+    });
+    
+    await alert.present();
+
+    this.apiService.get('usuario/perfil').subscribe({
+      next: () => {
+        alert.message = 'Conexão com a API estabelecida com sucesso!';
+      },
+      error: (err) => {
+        alert.message = `Erro na conexão: ${err.status} - ${err.statusText}`;
+      }
+    });
   }
 }

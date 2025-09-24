@@ -2,10 +2,6 @@
   <ion-toolbar>
     <ion-title>Perfil do Usuário</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="testarEndpoints()" color="medium" fill="outline">
-        <ion-icon name="wifi-outline" slot="start"></ion-icon>
-        Testar Endpoints
-      </ion-button>
       <ion-button (click)="logout()">
         <ion-icon name="log-out-outline"></ion-icon>
       </ion-button>
@@ -124,5 +120,58 @@
         Cancelar
       </ion-button>
     </div>
+    
+    <!-- Seção de Postagens -->
+    <div class="ion-padding">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>📢 Minhas Postagens</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-item>
+            <ion-label position="stacked">Título</ion-label>
+            <ion-input [(ngModel)]="novaPostagem.titulo" placeholder="Título da postagem"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="stacked">Conteúdo</ion-label>
+            <ion-textarea [(ngModel)]="novaPostagem.conteudo" placeholder="Escreva algo..."></ion-textarea>
+          </ion-item>
+          <ion-button expand="block" color="primary" (click)="adicionarPostagem()">
+            <ion-icon name="send" slot="start"></ion-icon>
+            Publicar
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Loading para postagens -->
+      <div class="ion-text-center" *ngIf="carregandoPostagens">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Carregando postagens...</p>
+      </div>
+
+      <ion-list *ngIf="!carregandoPostagens && postagens.length > 0">
+        <ion-item *ngFor="let post of postagens">
+          <ion-label>
+            <h2>{{ post.titulo }}</h2>
+            <p>{{ post.conteudo }}</p>
+            <small>{{ post.data | date:'short' }}</small>
+            <ion-badge *ngIf="!post.sincronizado" color="warning" style="margin-left: 8px;">
+              Offline
+            </ion-badge>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+
+      <ion-text *ngIf="!carregandoPostagens && postagens.length === 0" color="medium">
+        <p class="ion-text-center">Nenhuma postagem ainda.</p>
+      </ion-text>
+
+      <!-- Botão para testar conexão -->
+      <ion-button expand="block" fill="outline" color="medium" (click)="testarConexaoAPI()">
+        <ion-icon name="wifi" slot="start"></ion-icon>
+        Testar Conexão API
+      </ion-button>
+    </div>
+
   </div>
 </ion-content>
